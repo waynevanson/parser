@@ -32,4 +32,15 @@ describe(Scanner, () => {
       },
     ])
   })
+
+  it("should throw when a regex is not sticky", () => {
+    expect(
+      () =>
+        new Scanner("", {
+          Word: /\w+/y,
+          Punctuation: /[\,\!]+/,
+          Space: /[\s\r\t]+/y,
+        })
+    ).toThrowError()
+  })
 })
