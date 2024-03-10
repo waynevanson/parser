@@ -1,83 +1,142 @@
-import { Lexer } from "./lexer"
-import { Scanner } from "./scanner"
+import { TokenConfigByIdentifier } from "./lexer"
 
-export interface NUD<Token, Output> {
-  type: "Nud"
-  nud: (expr: (rbp: number) => Output, lexer: Lexer<any, Token>) => Output
+export interface Lexer<TokenByIdentifier extends Record<string, unknown>>
+  extends IterableIterator<Token<TokenByIdentifier>> {
+  peek(): IteratorResult<Token<TokenByIdentifier>>
 }
 
-export interface LED<Token, Output> {
-  type: "Led"
-  led: (
-    left: Output,
-    expr: (rbp: number) => Output,
-    lexer: Lexer<any, Token>
-  ) => Output
+export interface Nud<
+  Identifier extends string,
+  TokenByIdentifier extends Record<Identifier, unknown>,
+  Output
+> {
+  nud: (params: {
+    rbp: number
+    value: TokenByIdentifier[Identifier]
+    expr: (rbp: number) => Output
+    lexer: Lexer<TokenByIdentifier>
+  }) => Output
 }
 
+export interface Led<
+  Identifier extends string,
+  TokenByIdentifier extends Record<Identifier, unknown>,
+  Output
+> {
+  led: (params: {
+    rbp: number
+    left: Output
+    value: TokenByIdentifier[Identifier]
+    expr: (rbp: number) => Output
+    lexer: Lexer<TokenByIdentifier>
+  }) => Output
+}
 
-export type Parsable<Token, Output> = NUD<Token, Output> | LED<Token, Output>
+export type Parsable<
+  Identifier extends string,
+  TokenByIdentifier extends Record<Identifier, unknown>,
+  Output
+> =
+  | Nud<Identifier, TokenByIdentifier, Output>
+  | Led<Identifier, TokenByIdentifier, Output>
 
-export class Pratt<Identifier extends string, Token, Output> {
+export type Token<TokenByIdentifier extends Record<string, unknown>> = {
+  [Identifier in keyof TokenByIdentifier]: [
+    Identifier,
+    TokenByIdentifier[Identifier]
+  ]
+}[keyof TokenByIdentifier]
+
+export class Pratt<TokenByIdentifier extends Record<string, unknown>, Output> {
   constructor(
-    private lexer: Lexer<Identifier, Token>,
-    private lbps: Record<Identifier, number>,
-    private parsables: Record<Identifier, Parsable<Token, Output>>
+    private lexer: Lexer<TokenByIdentifier>,
+    private lbps: Record<keyof TokenByIdentifier, number>,
+    private parsables: {
+      [Identifier in keyof TokenByIdentifier]: Parsable<
+        Identifier & string,
+        TokenByIdentifier,
+        Output
+      >
+    }
   ) {}
 
   parse(): Output {
-    return this.expr(0)
-  }
+    const output = this.expr(0)
 
-  // these always return tokens because EOF is a token that represents none.
-  // our implementation uses iterator result.done to indicate this.
-  //
-  // should we have it here? How do we avoid exposing this to the user?
-  // they only want to worry about converting token into output
-  // and this is always Some.
-  expr(rbp: number): IteratorResult<Output,Error> {
-    const nud = this.nud()
-
-    if (nud.done) {
-      return {done:true,value:new Error("Nud should be a value")}
-    }
-    
-    while (rbp < ) {
-      ;[left, lbp] = this.led(left)
+    if (!this.lexer.peek().done) {
+      throw new Error("Did not reach EOF")
     }
 
-    return left
+    return output
   }
 
-  nud(): IteratorResult<[Output, number],> {
+  // nud first, led for rest
+  expr(rbp: number): Output {
+    let current = this.nud()
+
+    let peeked = this.lexer.peek()
+
+    if (peeked.done) {
+      //?
+      throw new Error("done")
+    }
+
+    let lbp = this.lbps[peeked.value[0]]
+
+    while (rbp < lbp) {
+      current = this.led(current[1])
+    }
+
+    return current[1]
+  }
+
+  nud(): [keyof TokenByIdentifier, Output] {
     const token = this.lexer.next()
 
-    if (token.done) return token
-
-    const parsable = this.parsables[token.value.identifier]
-
-    if (parsable.type !== "Nud") {
-      throw new Error(`Token ${token.value.identifier} should be a nud`)
+    if (token.done) {
+      throw new Error("nuddy")
     }
 
-    const output = parsable.nud((rbp) => this.expr(rbp), this.lexer)
+    const [identifier, value] = token.value
 
-    return { value: [output, this.lbps[token.value.identifier]] }
+    const parsable = this.parsables[identifier]
+
+    if (!("nud" in parsable)) {
+      throw new Error(`Token ${token.value} should be a nud`)
+    }
+
+    const output = parsable.nud({
+      expr: (rbp: number) => this.expr(rbp),
+      lexer: this.lexer,
+      rbp: this.lbps[identifier],
+      value: value as never,
+    })
+
+    return [identifier, output]
   }
 
-  led(left: Output): IteratorResult<[Output, number]> {
+  led(left: Output): [keyof TokenByIdentifier, Output] {
     const token = this.lexer.next()
 
-    if (token.done) return token
-
-    const parsable = this.parsables[token.value.identifier]
-
-    if (parsable.type !== "Led") {
-      throw new Error(`Token ${token.value.identifier} should be a led`)
+    if (token.done) {
+      throw new Error("leddy")
     }
 
-    const output = parsable.led(left, (rbp) => this.expr(rbp), this.lexer)
+    const [identifier, value] = token.value
+    const parsable = this.parsables[identifier]
 
-    return { value: [output, this.lbps[token.value.identifier]] }
+    if (!("led" in parsable)) {
+      throw new Error(`Token ${token.value} should be a led`)
+    }
+
+    const output = parsable.led({
+      expr: (rbp) => this.expr(rbp),
+      left,
+      lexer: this.lexer,
+      rbp: this.lbps[identifier],
+      value: value as never,
+    })
+
+    return [identifier, output]
   }
 }

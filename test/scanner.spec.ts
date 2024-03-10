@@ -13,23 +13,11 @@ describe(Scanner, () => {
     const lexemes = Array.from(scanner)
 
     expect(lexemes).toStrictEqual([
-      {
-        identifier: "Word",
-        characters: "Hello",
-      },
-      {
-        identifier: "Punctuation",
-        characters: ",",
-      },
-      { identifier: "Space", characters: " " },
-      {
-        identifier: "Word",
-        characters: "World",
-      },
-      {
-        identifier: "Punctuation",
-        characters: "!",
-      },
+      ["Word", "Hello"],
+      ["Punctuation", ","],
+      ["Space", " "],
+      ["Word", "World"],
+      ["Punctuation", "!"],
     ])
   })
 
@@ -42,5 +30,22 @@ describe(Scanner, () => {
           Space: /[\s\r\t]+/y,
         })
     ).toThrowError()
+  })
+
+  it("should peek twice and return the same token", () => {
+    const text = "Hello, World!"
+    const scanner = new Scanner(text, {
+      Word: /\w+/y,
+      Punctuation: /[\,\!]+/y,
+      Space: /[\s\r\t]+/y,
+    })
+
+    expect(scanner.peek()).toStrictEqual({
+      value: ["Word", "Hello"],
+    })
+
+    expect(scanner.peek()).toStrictEqual({
+      value: ["Word", "Hello"],
+    })
   })
 })

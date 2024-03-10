@@ -2,7 +2,7 @@ export class Queue<Value> implements IterableIterator<Value> {
   constructor(private items: Array<Value> = []) {}
 
   push(...args: Array<Value>) {
-    this.push(...args)
+    this.items.push(...args)
   }
 
   pull(count: number): Array<Value> {

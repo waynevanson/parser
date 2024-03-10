@@ -1,95 +1,94 @@
+import { Queue } from "./queue"
 import { Scanner } from "./scanner"
 
-export interface Capture {
-  type: "Captured"
-}
+export type Keep = "Keep"
+export type Skip = "Skip"
+export type Transform<Value> = (characters: string) => Value
 
-export interface Skip {
-  type: "Skip"
-}
-
-export interface Transform<Value> {
-  type: "Transform"
-  transform: (characters: string) => Value
-}
-
-export type TokenConfig<Value> = Capture | Skip | Transform<Value>
+export type TokenConfig<Value> = Keep | Skip | Transform<Value>
 
 export type TokenConfigByIdentifier<
-  Identifier extends string,
-  Token extends { identifier: Identifier; value: unknown }
+  ValueByIdentifier extends Record<string, unknown>,
+  Skippable extends string
 > = {
-  [I in Identifier]: I extends Token["identifier"]
-    ? Token extends any
-      ? Token["identifier"] extends I
-        ? string extends Token["value"]
-          ? Capture | Transform<string>
-          : Transform<Token["value"]>
-        : never
-      : never
-    : Skip
-}
+  [Identifier in keyof ValueByIdentifier]: string extends ValueByIdentifier[Identifier]
+    ? Keep | Transform<ValueByIdentifier[Identifier]>
+    : Transform<ValueByIdentifier[Identifier]>
+} & Record<Skippable, Skip>
+
+export type Token<TokenByIdentifier extends Record<string, unknown>> = {
+  [Identifier in keyof TokenByIdentifier]: [
+    Identifier,
+    TokenByIdentifier[Identifier]
+  ]
+}[keyof TokenByIdentifier]
 
 export class Lexer<
-  Identifier extends string,
-  Token extends { identifier: Identifier; value: unknown }
-> implements IterableIterator<Token>
+  ValueByIdentifier extends Record<string, unknown>,
+  Skippable extends string
+> implements IterableIterator<Token<ValueByIdentifier>>
 {
   constructor(
-    private scanner: Scanner<Identifier>,
-    private tokenConfigByIdentifer: TokenConfigByIdentifier<Identifier, Token>
+    private scanner: Scanner<(string & keyof ValueByIdentifier) | Skippable>,
+    private tokenConfigByIdentifer: TokenConfigByIdentifier<
+      ValueByIdentifier,
+      Skippable
+    >,
+    private queue: Queue<Token<ValueByIdentifier>> = new Queue()
   ) {}
 
-  next() {
-    let value: undefined | Token
+  peek(): IteratorResult<Token<ValueByIdentifier>> {
+    const queue = this.queue.peek()
 
+    if (!queue.done) return queue
+
+    const next = this.next()
+
+    if (next.done) return next
+    this.queue.push(next.value)
+
+    return next
+  }
+
+  next(): IteratorResult<Token<ValueByIdentifier>> {
     let lexeme = this.scanner.next()
 
-    while (!value) {
+    let token: Token<ValueByIdentifier> | undefined
+
+    while (!token) {
       if (lexeme.done) return lexeme
 
-      //@ts-ignore
-      const tokenConfig = this.tokenConfigByIdentifer[
-        lexeme.value.identifier
-      ]! as TokenConfig<unknown>
+      const [identifier, characters] = lexeme.value
 
-      switch (tokenConfig.type) {
-        case "Captured":
-          value = lexeme.value as never
-          break
+      const config: TokenConfig<unknown> = this.tokenConfigByIdentifer[
+        identifier
+      ] as never
 
-        case "Transform":
-          value = {
-            identifier: lexeme.value.identifier,
-            value: tokenConfig.transform(lexeme.value.characters),
-          } as never
-          break
+      if (typeof config === "function") {
+        //@ts-ignore
+        token = [identifier as keyof ValueByIdentifier, config(characters)]
 
-        case "Skip":
-          lexeme = this.scanner.next()
+        break
       }
+
+      if (config === "Keep") {
+        //@ts-ignore
+        token = [identifier as keyof ValueByIdentifier, characters]
+
+        break
+      }
+
+      lexeme = this.scanner.next()
     }
 
-    return { value }
+    return { value: token! }
   }
 
   [Symbol.iterator]() {
-    return new Lexer(this.scanner, this.tokenConfigByIdentifer)
+    return new Lexer<ValueByIdentifier, Skippable>(
+      this.scanner[Symbol.iterator](),
+      this.tokenConfigByIdentifer,
+      this.queue[Symbol.iterator]()
+    )
   }
 }
-
-new Lexer<
-  "Hello" | "World" | "Earth",
-  // capture or transform
-  | { identifier: "Hello"; value: string }
-  // transform
-  | { identifier: "Earth"; value: number }
-  // skip world
->(new Scanner("", { Hello: /s/y, World: /y/y, Earth: /e/y }), {
-  Hello: { type: "Captured" },
-  World: { type: "Skip" },
-  // should not be skip
-  Earth: { type: "Transform", transform: Number },
-})
-
-type A = string extends string ? 1 : 2

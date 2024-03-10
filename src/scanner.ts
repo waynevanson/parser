@@ -1,9 +1,6 @@
 import { Queue } from "./queue"
 
-export interface Lexeme<Identifier> {
-  identifier: Identifier
-  characters: string
-}
+export type Lexeme<Identifier> = [Identifier, string]
 
 export class Scanner<Identifier extends string>
   implements IterableIterator<Lexeme<Identifier>>
@@ -54,6 +51,12 @@ export class Scanner<Identifier extends string>
   }
 
   next(): IteratorResult<Lexeme<Identifier>> {
+    const queue = this.queue.peek()
+
+    if (!queue.done) {
+      return queue
+    }
+
     if (this.index >= this.text.length) {
       return { value: undefined, done: true }
     }
@@ -67,7 +70,7 @@ export class Scanner<Identifier extends string>
 
       if (match === null) continue
 
-      const value = { identifier, characters: match[0] }
+      const value: Lexeme<Identifier> = [identifier, match[0]]
 
       this.index = regexp.lastIndex
 
