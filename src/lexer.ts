@@ -13,54 +13,47 @@ export interface Transform<Value> {
   transform: (characters: string) => Value
 }
 
-export interface Token<Identifier extends string, Value> {
-  identifier: Identifier
-  value: Value
+export type TokenConfig<Value> = Capture | Skip | Transform<Value>
+
+export type TokenConfigByIdentifier<
+  Identifier extends string,
+  Token extends { identifier: Identifier; value: unknown }
+> = {
+  [I in Identifier]: I extends Token["identifier"]
+    ? Token extends any
+      ? Token["identifier"] extends I
+        ? string extends Token["value"]
+          ? Capture | Transform<string>
+          : Transform<Token["value"]>
+        : never
+      : never
+    : Skip
 }
 
-export type Tokenable<Value> = Capture | Skip | Transform<Value>
-
-export type Tokenized<
+export class Lexer<
   Identifier extends string,
-  Tokenables extends Record<Identifier, Tokenable<unknown>>
-> = {
-  [P in keyof Tokenables]: Tokenables[P] extends Capture
-    ? Token<Identifier, string>
-    : Tokenables[P] extends Transform<infer Value>
-    ? Token<Identifier, Value>
-    : never
-}[keyof Tokenables]
-
-// could do one or two types for the Lexer, or use this API.
-export class Lexer<Identifier extends string, Token>
-  implements
-    IterableIterator<
-      Tokenized<Identifier, Record<Identifier, Tokenable<Token>>>
-    >
+  Token extends { identifier: Identifier; value: unknown }
+> implements IterableIterator<Token>
 {
   constructor(
     private scanner: Scanner<Identifier>,
-    private tokenableByIdentifer: Record<Identifier, Tokenable<Token>>
+    private tokenConfigByIdentifer: TokenConfigByIdentifier<Identifier, Token>
   ) {}
 
-  // todo
-  peek() {}
-
-  next(): IteratorResult<
-    Tokenized<Identifier, Record<Identifier, Tokenable<Token>>>
-  > {
-    let value:
-      | undefined
-      | Tokenized<Identifier, Record<Identifier, Tokenable<Token>>>
+  next() {
+    let value: undefined | Token
 
     let lexeme = this.scanner.next()
 
     while (!value) {
       if (lexeme.done) return lexeme
 
-      const tokenable = this.tokenableByIdentifer[lexeme.value.identifier]!
+      //@ts-ignore
+      const tokenConfig = this.tokenConfigByIdentifer[
+        lexeme.value.identifier
+      ]! as TokenConfig<unknown>
 
-      switch (tokenable.type) {
+      switch (tokenConfig.type) {
         case "Captured":
           value = lexeme.value as never
           break
@@ -68,7 +61,7 @@ export class Lexer<Identifier extends string, Token>
         case "Transform":
           value = {
             identifier: lexeme.value.identifier,
-            value: tokenable.transform(lexeme.value.characters),
+            value: tokenConfig.transform(lexeme.value.characters),
           } as never
           break
 
@@ -81,6 +74,22 @@ export class Lexer<Identifier extends string, Token>
   }
 
   [Symbol.iterator]() {
-    return new Lexer(this.scanner, this.tokenableByIdentifer)
+    return new Lexer(this.scanner, this.tokenConfigByIdentifer)
   }
 }
+
+new Lexer<
+  "Hello" | "World" | "Earth",
+  // capture or transform
+  | { identifier: "Hello"; value: string }
+  // transform
+  | { identifier: "Earth"; value: number }
+  // skip world
+>(new Scanner("", { Hello: /s/y, World: /y/y, Earth: /e/y }), {
+  Hello: { type: "Captured" },
+  World: { type: "Skip" },
+  // should not be skip
+  Earth: { type: "Transform", transform: Number },
+})
+
+type A = string extends string ? 1 : 2
