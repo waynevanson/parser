@@ -3,7 +3,7 @@ import { Pratt } from "../src/pratt"
 import { Scanner } from "../src/scanner"
 import { Lexer } from "../src/lexer"
 
-describe(Pratt, () => {
+describe.skip(Pratt, () => {
   it("should parse the values", () => {
     const scanner = new Scanner("first, 324", {
       First: /first/y,

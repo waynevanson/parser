@@ -1,5 +1,11 @@
 import { Queue } from "./queue"
-import { Scanner } from "./scanner"
+
+export interface Scanner<Identifier extends string>
+  extends IterableIterator<[Identifier, string]> {
+  peek(): IteratorResult<[Identifier, string]>
+  next(): IteratorResult<[Identifier, string]>
+  [Symbol.iterator](): Scanner<Identifier>
+}
 
 export type Keep = "Keep"
 export type Skip = "Skip"
@@ -64,6 +70,7 @@ export class Lexer<
         identifier
       ] as never
 
+      // not sure why config isn't having its type constrained..
       if (typeof config === "function") {
         //@ts-ignore
         token = [identifier as keyof ValueByIdentifier, config(characters)]

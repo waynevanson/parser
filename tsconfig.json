@@ -3,6 +3,6 @@
     "strict": true,
     "target": "esnext",
     "allowSyntheticDefaultImports": true,
-    "module": "NodeNext"
+    "module": "esnext"
   }
 }

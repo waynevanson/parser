@@ -1,12 +1,18 @@
-import { TokenConfigByIdentifier } from "./lexer"
+export type Token<TokenByIdentifier extends Record<string, unknown>> = {
+  [Identifier in keyof TokenByIdentifier]: [
+    Identifier,
+    TokenByIdentifier[Identifier]
+  ]
+}[keyof TokenByIdentifier]
 
 export interface Lexer<TokenByIdentifier extends Record<string, unknown>>
   extends IterableIterator<Token<TokenByIdentifier>> {
   peek(): IteratorResult<Token<TokenByIdentifier>>
+  [Symbol.iterator](): Lexer<TokenByIdentifier>
 }
 
 export interface Nud<
-  Identifier extends string,
+  Identifier extends keyof any,
   TokenByIdentifier extends Record<Identifier, unknown>,
   Output
 > {
@@ -19,7 +25,7 @@ export interface Nud<
 }
 
 export interface Led<
-  Identifier extends string,
+  Identifier extends keyof any,
   TokenByIdentifier extends Record<Identifier, unknown>,
   Output
 > {
@@ -33,110 +39,53 @@ export interface Led<
 }
 
 export type Parsable<
-  Identifier extends string,
+  Identifier extends keyof any,
   TokenByIdentifier extends Record<Identifier, unknown>,
   Output
 > =
   | Nud<Identifier, TokenByIdentifier, Output>
   | Led<Identifier, TokenByIdentifier, Output>
 
-export type Token<TokenByIdentifier extends Record<string, unknown>> = {
-  [Identifier in keyof TokenByIdentifier]: [
+export type ParsableByIdentifier<
+  TokenByIdentifier extends Record<string, unknown>,
+  Output
+> = {
+  [Identifier in keyof TokenByIdentifier]: Parsable<
     Identifier,
-    TokenByIdentifier[Identifier]
-  ]
-}[keyof TokenByIdentifier]
+    TokenByIdentifier,
+    Output
+  >
+}
 
-export class Pratt<TokenByIdentifier extends Record<string, unknown>, Output> {
+export class Pratt<
+  TokenByIdentifier extends Record<string, unknown>,
+  EOF extends keyof TokenByIdentifier,
+  Output
+> {
   constructor(
     private lexer: Lexer<TokenByIdentifier>,
-    private lbps: Record<keyof TokenByIdentifier, number>,
-    private parsables: {
-      [Identifier in keyof TokenByIdentifier]: Parsable<
-        Identifier & string,
-        TokenByIdentifier,
-        Output
-      >
-    }
+    private lbpByIdentifier: Record<
+      Exclude<keyof TokenByIdentifier, EOF>,
+      number
+    >,
+    private parsableByIdentifier: ParsableByIdentifier<
+      TokenByIdentifier,
+      Output
+    >,
+    // we need to omit this from the parsable config
+    private EOF: EOF
   ) {}
 
-  parse(): Output {
-    const output = this.expr(0)
-
-    if (!this.lexer.peek().done) {
-      throw new Error("Did not reach EOF")
-    }
-
-    return output
+  // how to represent EOF in type system?
+  parse() {
+    this.expr(0)
   }
 
-  // nud first, led for rest
-  expr(rbp: number): Output {
-    let current = this.nud()
-
-    let peeked = this.lexer.peek()
-
-    if (peeked.done) {
-      //?
-      throw new Error("done")
-    }
-
-    let lbp = this.lbps[peeked.value[0]]
-
-    while (rbp < lbp) {
-      current = this.led(current[1])
-    }
-
-    return current[1]
+  expr(rbp: number) {
+    const first = this.nud()
   }
 
-  nud(): [keyof TokenByIdentifier, Output] {
-    const token = this.lexer.next()
+  nud(): IteratorResult<Output> {}
 
-    if (token.done) {
-      throw new Error("nuddy")
-    }
-
-    const [identifier, value] = token.value
-
-    const parsable = this.parsables[identifier]
-
-    if (!("nud" in parsable)) {
-      throw new Error(`Token ${token.value} should be a nud`)
-    }
-
-    const output = parsable.nud({
-      expr: (rbp: number) => this.expr(rbp),
-      lexer: this.lexer,
-      rbp: this.lbps[identifier],
-      value: value as never,
-    })
-
-    return [identifier, output]
-  }
-
-  led(left: Output): [keyof TokenByIdentifier, Output] {
-    const token = this.lexer.next()
-
-    if (token.done) {
-      throw new Error("leddy")
-    }
-
-    const [identifier, value] = token.value
-    const parsable = this.parsables[identifier]
-
-    if (!("led" in parsable)) {
-      throw new Error(`Token ${token.value} should be a led`)
-    }
-
-    const output = parsable.led({
-      expr: (rbp) => this.expr(rbp),
-      left,
-      lexer: this.lexer,
-      rbp: this.lbps[identifier],
-      value: value as never,
-    })
-
-    return [identifier, output]
-  }
+  led(left): IteratorResult<Output> {}
 }
