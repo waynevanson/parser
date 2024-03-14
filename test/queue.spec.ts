@@ -29,5 +29,12 @@ describe(Queue, () => {
     expect(queue.peek()).toStrictEqual(done)
     expect(queue.next()).toStrictEqual(done)
     expect(queue.peek()).toStrictEqual(done)
+
+    queue.add(value)
+
+    expect(queue.peek()).toStrictEqual(progress)
+    expect(queue.peek()).toStrictEqual(progress)
+    expect(queue.next()).toStrictEqual(progress)
+    expect(queue.next()).toStrictEqual(done)
   })
 })

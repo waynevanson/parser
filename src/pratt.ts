@@ -84,25 +84,22 @@ export class Pratt<TokenByIdentifier extends Record<string, unknown>, Output> {
     return output
   }
 
+  lbp(): number {
+    const peeked = this.lexer.peek()
+
+    if (peeked.done) return 0
+
+    const identifier = peeked.value[0]
+
+    const lbp = this.lbpByIdentifier[identifier]
+
+    return lbp
+  }
+
   expr(rbp: number): Output {
     let lefted = this.nud()
 
-    const lbp = () => {
-      const peeked = this.lexer.peek()
-
-      if (peeked.done) {
-        console.log({ lefted })
-        throw new Error(`Peeked should be a value, not EOF`)
-      }
-
-      const identifier = peeked.value[0]
-
-      const lbp = this.lbpByIdentifier[identifier]
-
-      return lbp
-    }
-
-    while (rbp < lbp()) {
+    while (rbp < this.lbp()) {
       lefted = this.led(lefted.value)
 
       if (lefted.done) {

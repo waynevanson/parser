@@ -12,6 +12,7 @@ describe(Pratt, () => {
     })
 
     type Tokens = { number: number; operator: string }
+
     const lexer = new Lexer<Tokens, "spaces">(scanner, {
       spaces: "Skip",
       number: Number,
@@ -52,8 +53,8 @@ describe(Pratt, () => {
 
     expect(parsed).toStrictEqual({
       operator: "+",
-      left: 1,
-      right: 2,
+      left: { number: 1 },
+      right: { number: 2 },
     })
   })
 })
