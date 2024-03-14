@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { Scanner } from "../src/scanner"
+import { Scanner } from "../packages/scanner"
 
 describe(Scanner, () => {
   it("should scan some text", () => {

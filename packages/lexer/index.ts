@@ -1,4 +1,4 @@
-import { Queue } from "./queue"
+import { Option } from "../option"
 
 export interface Scanner<Identifier extends string>
   extends IterableIterator<[Identifier, string]> {
@@ -40,7 +40,7 @@ export class Lexer<
       ValueByIdentifier,
       Skippable
     >,
-    private queue: Queue<Token<ValueByIdentifier>> = new Queue()
+    private queue: Option<Token<ValueByIdentifier>> = new Option()
   ) {}
 
   peek(): IteratorResult<Token<ValueByIdentifier>> {

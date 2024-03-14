@@ -1,4 +1,4 @@
-import { Queue } from "./queue"
+import { Option } from "../option"
 
 export type Lexeme<Identifier> = [Identifier, string]
 
@@ -11,7 +11,7 @@ export class Scanner<Identifier extends string>
     private text: string,
     private regexpByIdentifier: Record<Identifier, RegExp>,
     private index = 0,
-    private queue = new Queue<Lexeme<Identifier>>()
+    private queue = new Option<Lexeme<Identifier>>()
   ) {
     this.identifiers = Object.keys(regexpByIdentifier) as Array<Identifier>
 

@@ -1,6 +1,6 @@
 const EMPTY = Symbol("Empty")
 
-export class Queue<Value> implements IterableIterator<Value> {
+export class Option<Value> implements IterableIterator<Value> {
   constructor(private value: typeof EMPTY | Value = EMPTY) {}
 
   add(value: Value) {
@@ -32,6 +32,6 @@ export class Queue<Value> implements IterableIterator<Value> {
   }
 
   [Symbol.iterator]() {
-    return new Queue<Value>(this.value)
+    return new Option<Value>(this.value)
   }
 }

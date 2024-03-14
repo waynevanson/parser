@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { Queue } from "../src/queue"
+import { Option } from "../packages/option"
 
-describe(Queue, () => {
+describe(Option, () => {
   it("should be good bruc", () => {
-    const queue = new Queue()
+    const queue = new Option()
 
     const done = { done: true, value: undefined }
 
@@ -17,7 +17,7 @@ describe(Queue, () => {
 
   it("should be okay", () => {
     const value = 20
-    const queue = new Queue(value)
+    const queue = new Option(value)
 
     const done = { done: true, value: undefined }
     const progress = { value }

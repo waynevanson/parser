@@ -1,0 +1,14 @@
+{
+  "name": "@waynevanson/scanner",
+  "author": {
+    "email": "waynevanson@gmail.com",
+    "name": "Wayne Van Son",
+    "url": "https://github.com/waynevanson"
+  },
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@vitest/coverage-v8": "^1.3.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.3.1"
+  }
+}
