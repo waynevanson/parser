@@ -3,34 +3,57 @@ import { Pratt } from "../src/pratt"
 import { Scanner } from "../src/scanner"
 import { Lexer } from "../src/lexer"
 
-describe.skip(Pratt, () => {
+describe(Pratt, () => {
   it("should parse the values", () => {
-    const scanner = new Scanner("first, 324", {
-      First: /first/y,
-      Second: /[0-9]+/y,
-      __SKIP__: /[,\s\r\t]+/y,
+    const scanner = new Scanner("1 + 2", {
+      number: /[0-9]+/y,
+      operator: /[\+\-\*\/\^]/y,
+      spaces: /[,\s\r\t]+/y,
     })
 
-    type Tokens = { First: string; Second: number }
-    const lexer = new Lexer<Tokens, "__SKIP__">(scanner, {
-      __SKIP__: "Skip",
-      First: "Keep",
-      Second: Number,
+    type Tokens = { number: number; operator: string }
+    const lexer = new Lexer<Tokens, "spaces">(scanner, {
+      spaces: "Skip",
+      number: Number,
+      operator: "Keep",
     })
-    const pratt = new Pratt<Tokens, Array<string | number>>(
+
+    type Output =
+      | {
+          number: number
+        }
+      | {
+          operator: string
+          left: Output
+          right: Output
+        }
+
+    const pratt = new Pratt<Tokens, Output>(
       lexer,
       {
-        First: 0,
-        Second: 1,
+        number: 0,
+        operator: 1,
       },
       {
-        First: { nud: (context) => [context.value] },
-        Second: { led: (context) => context.left.concat([context.value]) },
+        number: {
+          nud: (context) => ({ number: context.value }),
+        },
+        operator: {
+          led: (context) => ({
+            left: context.left,
+            operator: context.value,
+            right: context.expr(context.lbp),
+          }),
+        },
       }
     )
 
     const parsed = pratt.parse()
 
-    expect(parsed).toStrictEqual(["first", "324"])
+    expect(parsed).toStrictEqual({
+      operator: "+",
+      left: 1,
+      right: 2,
+    })
   })
 })

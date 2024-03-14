@@ -47,5 +47,38 @@ describe(Scanner, () => {
     expect(scanner.peek()).toStrictEqual({
       value: ["Word", "Hello"],
     })
+
+    expect(scanner.next()).toStrictEqual({
+      value: ["Word", "Hello"],
+    })
+
+    expect(scanner.peek()).toStrictEqual({
+      value: ["Punctuation", ","],
+    })
+
+    expect(scanner.peek()).toStrictEqual({
+      value: ["Punctuation", ","],
+    })
+
+    expect(scanner.next()).toStrictEqual({
+      value: ["Punctuation", ","],
+    })
+
+    expect(scanner.next()).toStrictEqual({
+      value: ["Space", " "],
+    })
+
+    expect(scanner.next()).toStrictEqual({
+      value: ["Word", "World"],
+    })
+
+    expect(scanner.next()).toStrictEqual({
+      value: ["Punctuation", "!"],
+    })
+
+    expect(scanner.next()).toStrictEqual({
+      done: true,
+      value: undefined,
+    })
   })
 })

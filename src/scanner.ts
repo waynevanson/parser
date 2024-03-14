@@ -45,7 +45,7 @@ export class Scanner<Identifier extends string>
 
     if (nexted.done) return nexted
 
-    this.queue.push(nexted.value)
+    this.queue.add(nexted.value)
 
     return nexted
   }
@@ -54,6 +54,7 @@ export class Scanner<Identifier extends string>
     const queue = this.queue.peek()
 
     if (!queue.done) {
+      this.queue.delete()
       return queue
     }
 

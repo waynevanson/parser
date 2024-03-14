@@ -17,7 +17,7 @@ export interface Nud<
   Output
 > {
   nud: (params: {
-    rbp: number
+    lbp: number
     value: TokenByIdentifier[Identifier]
     expr: (rbp: number) => Output
     lexer: Lexer<TokenByIdentifier>
@@ -30,7 +30,7 @@ export interface Led<
   Output
 > {
   led: (params: {
-    rbp: number
+    lbp: number
     left: Output
     value: TokenByIdentifier[Identifier]
     expr: (rbp: number) => Output
@@ -57,35 +57,114 @@ export type ParsableByIdentifier<
   >
 }
 
-export class Pratt<
-  TokenByIdentifier extends Record<string, unknown>,
-  EOF extends keyof TokenByIdentifier,
-  Output
-> {
+export class Pratt<TokenByIdentifier extends Record<string, unknown>, Output> {
   constructor(
     private lexer: Lexer<TokenByIdentifier>,
-    private lbpByIdentifier: Record<
-      Exclude<keyof TokenByIdentifier, EOF>,
-      number
-    >,
+    private lbpByIdentifier: Record<keyof TokenByIdentifier, number>,
     private parsableByIdentifier: ParsableByIdentifier<
       TokenByIdentifier,
       Output
-    >,
-    // we need to omit this from the parsable config
-    private EOF: EOF
+    >
   ) {}
 
-  // how to represent EOF in type system?
-  parse() {
-    this.expr(0)
+  // only return if the peek token is done.
+  parse(): Output {
+    const output = this.expr(0)
+
+    const peeked = this.lexer.peek()
+
+    if (!peeked.done) {
+      throw new Error(
+        `Expected the next unconsumed token to be EOF but instead received ${peeked.value[0].toString()} ${
+          peeked.value[1]
+        } `
+      )
+    }
+
+    return output
   }
 
-  expr(rbp: number) {
-    const first = this.nud()
+  expr(rbp: number): Output {
+    let lefted = this.nud()
+
+    const lbp = () => {
+      const peeked = this.lexer.peek()
+
+      if (peeked.done) {
+        console.log({ lefted })
+        throw new Error(`Peeked should be a value, not EOF`)
+      }
+
+      const identifier = peeked.value[0]
+
+      const lbp = this.lbpByIdentifier[identifier]
+
+      return lbp
+    }
+
+    while (rbp < lbp()) {
+      lefted = this.led(lefted.value)
+
+      if (lefted.done) {
+        throw new Error(`Lefted should be a value, not EOF`)
+      }
+    }
+
+    return lefted.value
   }
 
-  nud(): IteratorResult<Output> {}
+  nud(): IteratorResult<Output> {
+    const tokened = this.lexer.next()
 
-  led(left): IteratorResult<Output> {}
+    if (tokened.done) return tokened
+
+    const [identifier, value] = tokened.value
+
+    const config = this.parsableByIdentifier[identifier]
+
+    if (!("nud" in config)) {
+      throw new Error(
+        `Could not find nud in the config for the identifier ${identifier.toString()}`
+      )
+    }
+
+    const lbp = this.lbpByIdentifier[identifier]
+
+    const output = config.nud({
+      lbp,
+      value,
+      lexer: this.lexer,
+      expr: (rbp) => this.expr(rbp),
+    })
+
+    return { value: output }
+  }
+
+  led(left: Output): IteratorResult<Output, undefined> {
+    const tokened = this.lexer.next()
+
+    if (tokened.done) return tokened
+
+    const [identifier, value] = tokened.value
+
+    const config = this.parsableByIdentifier[identifier]
+
+    if (!("led" in config)) {
+      throw new Error(
+        `Could not find led in the config for the identifier ${identifier.toString()} with value ${value}`
+      )
+    }
+
+    const lbp = this.lbpByIdentifier[identifier]
+
+    const output = config.led({
+      lbp,
+      value,
+      lexer: this.lexer,
+      expr: (rbp) => this.expr(rbp),
+      left,
+    })
+
+    return { value: output }
+  }
 }

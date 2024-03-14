@@ -12,11 +12,17 @@ describe(Lexer, () => {
 
     const lexer = new Lexer<{ First: string; Second: number }, "__SKIP__">(
       scanner,
-      { __SKIP__: "Skip", First: "Keep", Second: Number }
+      {
+        __SKIP__: "Skip",
+        First: "Keep",
+        Second: Number,
+      }
     )
 
     expect(lexer.peek()).toStrictEqual({ value: ["First", "first"] })
     expect(lexer.peek()).toStrictEqual({ value: ["First", "first"] })
+    expect(lexer.next()).toStrictEqual({ value: ["First", "first"] })
+    expect(lexer.next()).toStrictEqual({ value: ["Second", 324] })
   })
 
   it("should go through tokens", () => {

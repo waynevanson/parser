@@ -1,37 +1,37 @@
-export class Queue<Value> implements IterableIterator<Value> {
-  constructor(private items: Array<Value> = []) {}
+const EMPTY = Symbol("Empty")
 
-  push(...args: Array<Value>) {
-    this.items.push(...args)
+export class Queue<Value> implements IterableIterator<Value> {
+  constructor(private value: typeof EMPTY | Value = EMPTY) {}
+
+  add(value: Value) {
+    this.value = value
   }
 
-  pull(count: number): Array<Value> {
-    return this.items.splice(0, count)
+  delete() {
+    this.value = EMPTY
   }
 
   peek(): IteratorResult<Value> {
-    if (this.items.length <= 0) {
-      return { value: undefined, done: true }
+    if (this.value === EMPTY) {
+      return { done: true, value: undefined }
     }
 
-    const value = this.items[0]!
-
-    return { value }
+    return { value: this.value }
   }
 
   next(): IteratorResult<Value> {
-    const pulled = this.pull(1)
-
-    if (pulled.length <= 0) {
-      return { value: undefined, done: true }
+    if (this.value === EMPTY) {
+      return { done: true, value: undefined }
     }
 
-    const value = pulled[0]!
+    const value = this.value
+
+    this.value = EMPTY
 
     return { value }
   }
 
   [Symbol.iterator]() {
-    return new Queue<Value>(this.items.slice())
+    return new Queue<Value>(this.value)
   }
 }

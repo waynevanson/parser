@@ -51,12 +51,20 @@ export class Lexer<
     const next = this.next()
 
     if (next.done) return next
-    this.queue.push(next.value)
+
+    this.queue.add(next.value)
 
     return next
   }
 
   next(): IteratorResult<Token<ValueByIdentifier>> {
+    const peeked = this.queue.peek()
+
+    if (!peeked.done) {
+      this.queue.delete()
+      return peeked
+    }
+
     let lexeme = this.scanner.next()
 
     let token: Token<ValueByIdentifier> | undefined
