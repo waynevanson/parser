@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { Lexer } from "../Lexer"
-import { Scanner } from "../packages/scanner"
+import { Lexer } from "./index.js"
+import { Scanner } from "@waynevanson/scanner"
 
 describe(Lexer, () => {
   it("should peek at the next token", () => {

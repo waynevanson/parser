@@ -1,4 +1,4 @@
-import { Option } from "../option"
+import { Option } from "@waynevanson/option"
 
 export interface Scanner<Identifier extends string>
   extends IterableIterator<[Identifier, string]> {

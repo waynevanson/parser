@@ -1,4 +1,4 @@
-import { Option } from "../option"
+import { Option } from "@waynevanson/option"
 
 export type Lexeme<Identifier> = [Identifier, string]
 

@@ -1,6 +1,22 @@
 {
+  "name": "@waynevanson/option",
+  "private": false,
+  "author": {
+    "email": "waynevanson@gmail.com",
+    "name": "Wayne Van Son",
+    "url": "https://github.com/waynevanson"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "vitest run",
+    "build": "tsc --project tsconfig.build.json",
+    "release": "release-it"
+  },
   "devDependencies": {
     "@vitest/coverage-v8": "^1.3.1",
+    "release-it": "^17.1.1",
     "typescript": "^5.3.3",
     "vitest": "^1.3.1"
   }

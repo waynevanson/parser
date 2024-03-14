@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
-import { Pratt } from "../packages/pratt"
-import { Scanner } from "../packages/scanner"
-import { Lexer } from "../packages/lexer"
+import { Pratt } from "./index.js"
+import { Scanner } from "@waynevanson/scanner"
+import { Lexer } from "@waynevanson/lexer"
 
 describe(Pratt, () => {
   it("should parse the values", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { Option } from "../packages/option"
+import { Option } from "./dist"
 
 describe(Option, () => {
   it("should be good bruc", () => {
