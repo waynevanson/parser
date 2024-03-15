@@ -1,6 +1,6 @@
-import { Lexer } from "./packages/lexer"
-import { Pratt } from "./packages/pratt"
-import { Scanner } from "./packages/scanner"
+import { Lexer } from "@waynevanson/lexer"
+import { Pratt } from "@waynevanson/pratt"
+import { Scanner } from "@waynevanson/scanner"
 
 type Variable = "Null" | "String" | "Number" | "Boolean" | "Array" | "Object"
 

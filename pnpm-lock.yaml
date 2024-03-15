@@ -18,6 +18,18 @@ importers:
         specifier: ^1.3.1
         version: 1.3.1
 
+  packages/jmespath:
+    dependencies:
+      '@waynevanson/lexer':
+        specifier: workspace:../lexer
+        version: link:../lexer
+      '@waynevanson/pratt':
+        specifier: workspace:../pratt
+        version: link:../pratt
+      '@waynevanson/scanner':
+        specifier: workspace:../scanner
+        version: link:../scanner
+
   packages/lexer:
     dependencies:
       '@waynevanson/option':
