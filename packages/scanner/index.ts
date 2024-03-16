@@ -2,7 +2,7 @@ import { Option } from "@waynevanson/option"
 
 export type Lexeme<Identifier> = [Identifier, string]
 
-export class Scanner<Identifier extends string>
+export class Scanner<Identifier extends keyof any>
   implements IterableIterator<Lexeme<Identifier>>
 {
   private identifiers: Array<Identifier>

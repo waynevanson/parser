@@ -1,26 +1,26 @@
 import { Option } from "@waynevanson/option"
 
-export interface Scanner<Identifier extends string>
+export interface Scanner<Identifier>
   extends IterableIterator<[Identifier, string]> {
   peek(): IteratorResult<[Identifier, string]>
   next(): IteratorResult<[Identifier, string]>
   [Symbol.iterator](): Scanner<Identifier>
 }
 
-export type Keep = "Keep"
-export type Skip = "Skip"
+export type Keep = undefined
 export type Transform<Value> = (characters: string) => Value
 
-export type TokenConfig<Value> = Keep | Skip | Transform<Value>
+export type TokenConfig<Value> = Keep | Transform<Value>
 
 export type TokenConfigByIdentifier<
-  ValueByIdentifier extends Record<string, unknown>,
-  Skippable extends string
+  ValueByIdentifier extends Record<string, unknown>
 > = {
-  [Identifier in keyof ValueByIdentifier]: string extends ValueByIdentifier[Identifier]
+  [Identifier in keyof ValueByIdentifier]: void extends ValueByIdentifier[Identifier]
+    ? Keep
+    : string extends ValueByIdentifier[Identifier]
     ? Keep | Transform<ValueByIdentifier[Identifier]>
     : Transform<ValueByIdentifier[Identifier]>
-} & Record<Skippable, Skip>
+}
 
 export type Token<TokenByIdentifier extends Record<string, unknown>> = {
   [Identifier in keyof TokenByIdentifier]: [
@@ -29,17 +29,12 @@ export type Token<TokenByIdentifier extends Record<string, unknown>> = {
   ]
 }[keyof TokenByIdentifier]
 
-export class Lexer<
-  ValueByIdentifier extends Record<string, unknown>,
-  Skippable extends string
-> implements IterableIterator<Token<ValueByIdentifier>>
+export class Lexer<ValueByIdentifier extends Record<string, unknown>>
+  implements IterableIterator<Token<ValueByIdentifier>>
 {
   constructor(
-    private scanner: Scanner<(string & keyof ValueByIdentifier) | Skippable>,
-    private tokenConfigByIdentifer: TokenConfigByIdentifier<
-      ValueByIdentifier,
-      Skippable
-    >,
+    private scanner: Scanner<keyof ValueByIdentifier | string>,
+    private tokenConfigByIdentifer: TokenConfigByIdentifier<ValueByIdentifier>,
     private queue: Option<Token<ValueByIdentifier>> = new Option()
   ) {}
 
@@ -100,7 +95,7 @@ export class Lexer<
   }
 
   [Symbol.iterator]() {
-    return new Lexer<ValueByIdentifier, Skippable>(
+    return new Lexer<ValueByIdentifier>(
       this.scanner[Symbol.iterator](),
       this.tokenConfigByIdentifer,
       this.queue[Symbol.iterator]()
