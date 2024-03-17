@@ -1,9 +1,0 @@
-{
-  "name": "@waynevanson/jmespath-ast",
-  "type": "module",
-  "dependencies": {
-    "@waynevanson/scanner": "workspace:../scanner",
-    "@waynevanson/lexer": "workspace:../lexer",
-    "@waynevanson/pratt": "workspace:../pratt"
-  }
-}

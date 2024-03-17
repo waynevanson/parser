@@ -1,5 +1,5 @@
 import { Pratt } from "@waynevanson/pratt"
-import { TokenByIdentifier, createLexer } from "./lexer.js"
+import { TokenByIdentifier, Variable, createLexer } from "./lexer.js"
 import { Sum } from "./utils.js"
 
 type VariableType =
@@ -10,8 +10,6 @@ type VariableType =
   | "Array"
   | "Object"
 
-// check if I need to use negative lookahead/behind
-
 export type Comparator =
   | "Equal"
   | "NotEqual"
@@ -20,20 +18,10 @@ export type Comparator =
   | "GreaterThan"
   | "GreaterThanEqual"
 
-export type Variable = Sum<{
-  Null: void
-  String: string
-  Bool: boolean
-  Number: number
-  Array: Array<Variable>
-  Object: Record<string, Variable>
-  Expref: Ast
-}>
-
 export type Ast = Sum<{
   Comparison: { comparator: Comparator; lhs: Ast; rhs: Ast }
   Condition: { predicate: Ast; then: Ast }
-  Identity: {}
+  Identity: void
   Expref: { ast: Ast }
   Flatten: { node: Ast }
   Function: { name: string; args: Array<Ast> }
@@ -82,8 +70,24 @@ const lbps = {
   Rparen: 0,
 }
 
-// export type Output = { offset: number; ast: Ast }
+export const parse = (text: string) =>
+  new Pratt<TokenByIdentifier, Ast>(createLexer(text), lbps, {
+    At: {
+      nud: ({ value }) => ({ type: "Identity", value }),
+    },
+    Identifier: {
+      nud: ({ value }) => ({ type: "Field", value: { name: value } }),
+    },
+    QuotedIdentifier: {
+      nud: ({ value, lexer }) => {
+        if (lexer.peek().value === "(") {
+          throw new Error("Quoted strings can't be function name")
+        }
 
-// lets use dictionary syntax here too, just to simplify the process.
-const parse = (text: string) =>
-  new Pratt<TokenByIdentifier, Ast>(createLexer(text), lbps, {}).parse()
+        return { type: "Field", value: { name: value } }
+      },
+    },
+    //@ts-ignore
+    Star: {},
+    Literal: { nud: ({ value }) => ({ type: "Literal", value: { value } }) },
+  }).parse()

@@ -1,10 +1,23 @@
 import { Lexer } from "@waynevanson/lexer"
 import { createScanner } from "./scanner.js"
+import { Sum } from "./utils.js"
+import { Ast } from "./index.js"
+
+export type Variable = Sum<{
+  Null: void
+  String: string
+  Bool: boolean
+  Number: number
+  Array: Array<Variable>
+  Object: Record<string, Variable>
+  Expref: Ast
+}>
 
 export type TokenByIdentifier = {
   Identifier: string
   QuotedIdentifier: string
   Number: number
+  Literal: Variable
 } & Record<
   | "Dot"
   | "Lbracket"
@@ -27,7 +40,6 @@ export type TokenByIdentifier = {
   | "Gt"
   | "Or"
   | "Lt"
-  | "Literal"
   | "Colon"
   | "Filter"
   | "Flatten",
@@ -58,7 +70,40 @@ export function createLexer(text: string) {
     And: undefined,
     Ampersand: undefined,
     Colon: undefined,
-    Literal: undefined,
+    Literal: (text: string) => {
+      const replaced = text.replaceAll("\\`", "`")
+
+      const A = Symbol("Resolved")
+
+      const value = JSON.parse(text, (_, value: unknown): Variable => {
+        switch (typeof value) {
+          case "bigint":
+            return { type: "Number", value: Number(value) }
+
+          case "number":
+            return { type: "Number", value }
+
+          case "boolean":
+            return { type: "Bool", value }
+
+          case "string":
+            return { type: "String", value }
+
+          // this object will always be a Variable, as JSON.parse starts from deepest first.
+          // and Variables are objects
+          case "object":
+            if (value == null) break
+
+            // todo - fix
+            //@ts-ignore
+            return { type: "Object", value: value as Variable }
+        }
+
+        throw new Error("")
+      })
+
+      return value
+    },
     Lparen: undefined,
     Rparen: undefined,
     Or: undefined,
