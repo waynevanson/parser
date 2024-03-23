@@ -9,11 +9,12 @@
     "release": "release-it"
   },
   "dependencies": {
-    "@waynevanson/scanner": "workspace:../scanner",
     "@waynevanson/lexer": "workspace:../lexer",
-    "@waynevanson/pratt": "workspace:../pratt"
+    "@waynevanson/pratt": "workspace:../pratt",
+    "@waynevanson/scanner": "workspace:../scanner"
   },
   "devDependencies": {
+    "@types/node": "^20.11.30",
     "@vitest/coverage-v8": "^1.3.1",
     "release-it": "^17.1.1",
     "typescript": "^5.3.3",

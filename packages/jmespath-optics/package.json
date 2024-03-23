@@ -9,7 +9,9 @@
     "release": "release-it"
   },
   "dependencies": {
-    "@waynevanson/jmespath-parser": "workspace:../jmespath-parser"
+    "@waynevanson/jmespath-parser": "workspace:../jmespath-parser",
+    "fp-ts": "^2.16.4",
+    "monocle-ts": "^2.3.13"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^1.3.1",
